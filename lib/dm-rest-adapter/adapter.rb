@@ -208,7 +208,7 @@ module DataMapperRest
       conditions = query.conditions
 
       return {} unless conditions.kind_of?(DataMapper::Query::Conditions::AndOperation)
-      return {} if conditions.any? { |o| o.subject.key? }
+      return {} if conditions.any? { |o| o.subject.respond_to?(:key?) && o.subject.key? }
       
       query.options.reject { |k, v| [:fields, :conditions].include?(k) } \
         .merge(extract_params_from_conditions(conditions))
