@@ -16,9 +16,9 @@ gem 'json_pure',   '>= 1.4.6'
 group :development do
 
   gem 'dm-validations', DM_VERSION, SOURCE => "#{DATAMAPPER}/dm-validations#{REPO_POSTFIX}", :branch => "release-1.2"
-  gem 'jeweler',        '~> 1.5.2'
-  gem 'rake',           '~> 0.8.7'
-  gem 'rspec',          '~> 2.6'
+  gem 'jeweler',        '~> 1.8.4'
+  gem 'rake',           '~> 0.9.2'
+  gem 'rspec',          '~> 1.3.2'
 
 end
 
