@@ -117,6 +117,10 @@ module DataMapperRest
           @format = @options[:format]
       end
       
+      if @options[:disable_format_extension_in_request_url]
+        @format.extension = nil
+      end
+      
       @rest_client = RestClient::Resource.new(normalized_uri)
     end
     

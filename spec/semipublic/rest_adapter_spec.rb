@@ -30,6 +30,28 @@ describe DataMapper::Adapters::RestAdapter do
         :password => "secret",
         :format   => "TestFormat"
       }])
+      
+      @second_adapter = DataMapper::Adapters::RestAdapter.new(:test, DataMapper::Mash[{
+        :scheme   => "https",
+        :host     => "test.tld",
+        :port     => 81,
+        :user     => "admin",
+        :password => "secret",
+        :format   => "TestFormat",
+        :extension => "test",
+        :disable_format_extension_in_request_url => false
+      }])
+      
+      @third_adapter = DataMapper::Adapters::RestAdapter.new(:test, DataMapper::Mash[{
+        :scheme   => "https",
+        :host     => "test.tld",
+        :port     => 81,
+        :user     => "admin",
+        :password => "secret",
+        :format   => "TestFormat",
+        :extension => "test",
+        :disable_format_extension_in_request_url => true
+      }])
     end
 
     it "prepares a RestClient::Resource for the URI of the REST service" do
@@ -38,6 +60,14 @@ describe DataMapper::Adapters::RestAdapter do
     
     it "supports loading a format from a class name" do
       @adapter.format.should be_kind_of(TestFormat)
+    end
+    
+    it "prepares a RestClient::Resource for the URI of the REST service with format extensions if they are not disabled" do
+      @second_adapter.format.extension.should == "test"
+    end
+    
+    it "prepares a RestClient::Resource for the URI of the REST service without format extensions if they are disabled" do
+      @third_adapter.format.extension.should be_nil
     end
   end
 
