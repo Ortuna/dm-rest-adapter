@@ -20,18 +20,24 @@ describe DataMapper::Adapters::RestAdapter do
 
   describe "#initialize" do
     before(:each) do
+      class TestFormat < DataMapperRest::Format::AbstractFormat; end
+      
       @adapter = DataMapper::Adapters::RestAdapter.new(:test, DataMapper::Mash[{
         :scheme   => "https",
         :host     => "test.tld",
         :port     => 81,
         :user     => "admin",
         :password => "secret",
-        :format   => double()
+        :format   => "TestFormat"
       }])
     end
 
     it "prepares a RestClient::Resource for the URI of the REST service" do
       @adapter.rest_client.url.to_s.should == "https://admin:secret@test.tld:81"
+    end
+    
+    it "supports loading a format from a class name" do
+      @adapter.format.should be_kind_of(TestFormat)
     end
   end
 
@@ -314,7 +320,7 @@ describe DataMapper::Adapters::RestAdapter do
         :title => "DataMapper",
         :author => "Dann Kubb"
       )
-      @book.persisted_state = DataMapper::Resource::State::Persisted.new(@book)
+      @book.persistence_state = DataMapper::Resource::PersistenceState::Persisted.new(@book)
     end
 
     describe "#read" do
@@ -373,7 +379,7 @@ describe DataMapper::Adapters::RestAdapter do
         :created_at => DateTime.parse("2009-05-17T22:38:42-07:00"),
         :name => "Dan's Kubblishings"
       )
-      @publisher.persisted_state = DataMapper::Resource::State::Persisted.new(@publisher)
+      @publisher.persistence_state = DataMapper::Resource::PersistenceState::Persisted.new(@publisher)
     end
 
     describe "#read" do
@@ -449,7 +455,7 @@ describe DataMapper::Adapters::RestAdapter do
         :created_at => DateTime.parse("2009-05-17T22:38:42-07:00"),
         :author => "Dann Kubb"
       )
-      @book.persisted_state = DataMapper::Resource::State::Persisted.new(@book)
+      @book.persistence_state = DataMapper::Resource::PersistenceState::Persisted.new(@book)
       @query = @book.vendors.query
     end
     

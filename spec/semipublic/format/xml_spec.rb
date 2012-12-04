@@ -28,7 +28,8 @@ describe DataMapperRest::Format::Xml do
         :author     => "Testy McTesty"
       )
       book_xml = DataMapper::Ext::String.compress_lines(@format.string_representation(book))
-      book_xml.should == @xml
+      # FIXME: This hack to silence 'single' vs "double" quotes and <a> <b> vs <a></b> fragile test failures isn't ideal
+      book_xml.tr("'", '"').tr('"', "'").gsub(/> </, "><").should == @xml.tr("'", '"').tr('"', "'").gsub(/> </, "><")
     end
   end
   

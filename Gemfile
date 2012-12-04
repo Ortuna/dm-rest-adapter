@@ -5,16 +5,20 @@ source 'http://rubygems.org'
 SOURCE       = ENV.fetch('SOURCE', :git).to_sym
 REPO_POSTFIX = SOURCE == :path ? ''                                : '.git'
 DATAMAPPER   = SOURCE == :path ? Pathname(__FILE__).dirname.parent : 'http://github.com/datamapper'
-DM_VERSION   = '~> 1.1.1'
+DM_VERSION   = '~> 1.2.0'
 
-gem 'dm-serializer', DM_VERSION, SOURCE => "#{DATAMAPPER}/dm-serializer#{REPO_POSTFIX}"
+gem 'dm-serializer', DM_VERSION, SOURCE => "#{DATAMAPPER}/dm-serializer#{REPO_POSTFIX}", :branch => "release-1.2"
+
+gem 'multi_json',  '~> 1.0.3'
+gem 'json',        '>= 1.4.6'
+gem 'json_pure',   '>= 1.4.6'
 
 group :development do
 
-  gem 'dm-validations', DM_VERSION, SOURCE => "#{DATAMAPPER}/dm-validations#{REPO_POSTFIX}"
-  gem 'jeweler',        '~> 1.5.2'
-  gem 'rake',           '~> 0.8.7'
-  gem 'rspec',          '~> 1.3'
+  gem 'dm-validations', DM_VERSION, SOURCE => "#{DATAMAPPER}/dm-validations#{REPO_POSTFIX}", :branch => "release-1.2"
+  gem 'jeweler',        '~> 1.8.4'
+  gem 'rake',           '~> 0.9.2'
+  gem 'rspec',          '~> 1.3.2'
 
 end
 
@@ -30,7 +34,7 @@ end
 
 group :datamapper do
 
-  gem 'dm-core',      DM_VERSION, SOURCE => "#{DATAMAPPER}/dm-core#{REPO_POSTFIX}"
+  gem 'dm-core',      DM_VERSION, SOURCE => "#{DATAMAPPER}/dm-core#{REPO_POSTFIX}", :branch => "release-1.2"
   gem 'rest-client',  '~> 1.6.3'
 
   plugins = ENV['PLUGINS'] || ENV['PLUGIN']

@@ -35,6 +35,16 @@ module DataMapperRest
         end
       end
       
+      def properties_to_serialize(resource)
+        model = resource.model
+        
+        model.properties \
+          + model.relationships \
+          .reject{ |r| r.source_key == model.key } \
+          .collect{ |r| r.source_key } \
+          .flatten
+      end
+      
       def update_attributes(resource, body)
         return if DataMapper::Ext.blank?(body)
 

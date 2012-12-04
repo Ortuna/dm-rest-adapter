@@ -1,3 +1,5 @@
+require 'multi_json'
+
 module DataMapperRest
   module Format
     class Json < AbstractFormat
@@ -6,7 +8,13 @@ module DataMapperRest
       end
       
       def string_representation(resource)
-        resource.to_json
+        model = resource.model
+        
+        hash = properties_to_serialize(resource).reduce({}) do |h, property|
+          h.merge(property.field.to_sym => property.dump(property.get(resource)))
+        end
+        
+        MultiJson.encode(hash)
       end
       
       def parse_record(json, model)

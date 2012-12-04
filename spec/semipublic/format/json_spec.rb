@@ -10,18 +10,41 @@ describe DataMapperRest::Format::Json do
     before(:each) do
       @format = DataMapperRest::Format::Json.new
       @time = DateTime.now
-      @json = '{"id":1,"created_at":"' + @time.to_s + '","title":"Testing","author":"Testy McTesty"}'
     end
-
-    it "returns a JSON string representing the resource" do
-      book = Book.new(
-        :id         => 1,
-        :created_at => @time,
-        :title      => "Testing",
-        :author     => "Testy McTesty"
-      )
-      book_json = @format.string_representation(book)
-      book_json.should == @json
+    
+    context "with a simple resource" do
+      before(:each) do
+        @json = '{"id":1,"created_at":"' + @time.to_s + '","title":"Testing","author":"Testy McTesty"}'
+      end
+      
+      it "returns a JSON string representing the resource" do
+        book = Book.new(
+          :id         => 1,
+          :created_at => @time,
+          :title      => "Testing",
+          :author     => "Testy McTesty"
+        )
+        book_json = @format.string_representation(book)
+        book_json.should == @json
+      end
+    end
+    
+    context "with a complex resource" do
+      before(:each) do
+        @json = '{"id":1,"created_at":"' + @time.to_s + '","title":"Testing","author":"Testy McTesty","pid":7}'
+      end
+      
+      it "uses :field mappings" do
+        book = DifficultBook.new(
+          :id           => 1,
+          :created_at   => @time,
+          :title        => "Testing",
+          :author       => "Testy McTesty",
+          :publisher_id => 7
+        )
+        book_json = @format.string_representation(book)
+        book_json.should == @json
+      end
     end
   end
   

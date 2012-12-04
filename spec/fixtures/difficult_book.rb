@@ -7,7 +7,7 @@ class DifficultBook
   property :created_at,   DateTime
   property :title,        String
   property :author,       String
-  property :publisher_id, Integer
+  property :publisher_id, Integer, :field => 'pid'
   
   belongs_to :publisher
   has n, :chapters

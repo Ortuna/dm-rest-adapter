@@ -18,3 +18,5 @@ ROOT = Pathname(__FILE__).dirname.parent
 
 Pathname.glob((ROOT + 'spec/fixtures/**/*.rb').to_s).each { |file| require file }
 Pathname.glob((ROOT + 'spec/**/shared/**/*.rb').to_s).each { |file| require file }
+
+DataMapper.finalize

@@ -92,6 +92,8 @@ You can specify a non-standard extension (i.e. something other than ".json" or
  })
 
 If your URLs have no extension on them, just pass an empty string, or nil.
+DataMapper REST Adapter sends an HTTP Accept header to allow for content-
+negotiation on the service-side.
 
 If your Resources map to a different path than the name of the model itself,
 you can specify the path fragment with #storage_names as with other adapters:

@@ -1,10 +1,9 @@
 module DataMapperRest
-  # TODO: Follow redirects to newly created resources (existing bug)
-  #       Specs for resource format parse errors (existing bug)
+  # TODO: Specs for resource format parse errors (existing bug)
   #       Map properties to field names for #create/#update instead of assuming they match (existing bug)
 
   class Adapter < DataMapper::Adapters::AbstractAdapter
-    attr_accessor :rest_client
+    attr_accessor :rest_client, :format
     
     def create(resources)
       resources.each do |resource|
@@ -16,7 +15,16 @@ module DataMapperRest
         response = @rest_client[@format.resource_path(*path_items)].post(
           @format.string_representation(resource),
           :content_type => @format.mime, :accept => @format.mime
-        )
+        ) do |response, request, result, &block|
+          # See http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.2 for HTTP response 201
+          if @options[:follow_on_create] && [201, 301, 302, 307].include?(response.code)
+            response.args[:method] = :get
+            response.args.delete(:payload)
+            response.follow_redirection(request, result, &block)
+          else
+            response.return!(request, result, &block)
+          end
+        end
 
         @format.update_attributes(resource, response.body)
       end
@@ -103,19 +111,28 @@ module DataMapperRest
           @format = Format::Xml.new(@options.merge(:repository_name => name))
         when "json"
           @format = Format::Json.new(@options.merge(:repository_name => name))
+        when String
+          @format = load_format_from_string(@options[:format]).new(@options.merge(:repository_name => name))
         else
           @format = @options[:format]
       end
       
       @rest_client = RestClient::Resource.new(normalized_uri)
     end
+    
+    def load_format_from_string(class_name)
+      canonical = if class_name.start_with?("::")
+        class_name.gsub(/^::/, "")
+      else
+        class_name
+      end
+      
+      canonical.split("::").reduce(Kernel) { |klass, name| klass.const_get(name) }
+    end
 
     def normalized_uri
       @normalized_uri ||=
         begin
-          query = @options.except(:adapter, :scheme, :user, :password, :host, :port, :path, :fragment)
-          query = nil if query.empty?
-
           Addressable::URI.new(
             :scheme       => @options[:scheme] || "http",
             :user         => @options[:user],
@@ -123,7 +140,6 @@ module DataMapperRest
             :host         => @options[:host],
             :port         => @options[:port],
             :path         => @options[:path],
-            :query_values => query,
             :fragment     => @options[:fragment]
           )
         end
@@ -192,7 +208,7 @@ module DataMapperRest
       conditions = query.conditions
 
       return {} unless conditions.kind_of?(DataMapper::Query::Conditions::AndOperation)
-      return {} if conditions.any? { |o| o.subject.key? }
+      return {} if conditions.any? { |o| o.subject.respond_to?(:key?) && o.subject.key? }
       
       query.options.reject { |k, v| [:fields, :conditions].include?(k) } \
         .merge(extract_params_from_conditions(conditions))
