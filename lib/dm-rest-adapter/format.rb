@@ -16,7 +16,7 @@ module DataMapperRest
       end
 
       def resource_name(model)
-        model.storage_name(repository_name)
+        model.storage_name(model.default_repository_name) 
       end
 
       def resource_path(*path_fragments)
@@ -37,12 +37,7 @@ module DataMapperRest
       
       def properties_to_serialize(resource)
         model = resource.model
-        
-        model.properties \
-          + model.relationships \
-          .reject{ |r| r.source_key == model.key } \
-          .collect{ |r| r.source_key } \
-          .flatten
+        model.properties + model.relationships.reject{ |r| r.source_key == model.key }.collect{ |r| r.source_key }.flatten
       end
       
       def update_attributes(resource, body)

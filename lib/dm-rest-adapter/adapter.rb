@@ -8,10 +8,10 @@ module DataMapperRest
     def create(resources)
       resources.each do |resource|
         model = resource.model
-        
+
         path_items = extract_parent_items_from_resource(resource)
-        path_items << { :model => model }
-        
+        path_items << { :model => model.storage_name(model.default_repository_name) }
+
         response = @rest_client[@format.resource_path(*path_items)].post(
           @format.string_representation(resource),
           :content_type => @format.mime, :accept => @format.mime
@@ -105,7 +105,7 @@ module DataMapperRest
       super
       
       raise ArgumentError, "Missing :format in @options" unless @options[:format]
-      
+
       case @options[:format]
         when "xml"
           @format = Format::Xml.new(@options.merge(:repository_name => name))
@@ -116,7 +116,7 @@ module DataMapperRest
         else
           @format = @options[:format]
       end
-      
+    
       if @options[:disable_format_extension_in_request_url]
         @format.extension = nil
       end

@@ -20,15 +20,28 @@ describe DataMapper::Adapters::RestAdapter do
 
   describe "#initialize" do
     before(:each) do
-      class TestFormat < DataMapperRest::Format::AbstractFormat; end
-      
+      class TestFormat < DataMapperRest::Format::AbstractFormat
+        def string_representation(resource)
+          "<<mock format>>"
+        end
+      end
+      @legacy_format = TestFormat.new
+      @legacy_format.stub(:mime) {"application/mock"}
+      @legacy_format.stub(:string_representation) {"<<mock format>>"}
+      @legacy_format.stub(:update_attributes) {double()}
+      @legacy_format.stub(:parse_collection) {[]}
+      @legacy_format.stub(:parse_record) {double()}
+      @legacy_format.stub(:repository_name) {:test}
+      @legacy_response = double("response")
       @adapter = DataMapper::Adapters::RestAdapter.new(:test, DataMapper::Mash[{
         :scheme   => "https",
         :host     => "test.tld",
         :port     => 81,
         :user     => "admin",
         :password => "secret",
-        :format   => "TestFormat"
+        :format   => "TestFormat",
+        :extension => "test",
+        :disable_format_extension_in_request_url => true
       }])
       
       @second_adapter = DataMapper::Adapters::RestAdapter.new(:test, DataMapper::Mash[{
@@ -42,16 +55,41 @@ describe DataMapper::Adapters::RestAdapter do
         :disable_format_extension_in_request_url => false
       }])
       
-      @third_adapter = DataMapper::Adapters::RestAdapter.new(:test, DataMapper::Mash[{
-        :scheme   => "https",
+      @legacy_adapter = DataMapper::Adapters::RestAdapter.new(:test, DataMapper::Mash[{
         :host     => "test.tld",
         :port     => 81,
         :user     => "admin",
         :password => "secret",
-        :format   => "TestFormat",
-        :extension => "test",
+        :format   => @legacy_format,
         :disable_format_extension_in_request_url => true
       }])
+      @legacy_response.stub(:code) {200}
+      @legacy_response.stub(:body) {""}
+      @legacy_adapter.rest_client = double("rest_client")
+      @legacy_adapter.rest_client.stub(:[]) { @legacy_adapter.rest_client }
+      @legacy_adapter.rest_client.stub(:get) {@legacy_response}
+      @legacy_adapter.rest_client.stub(:post) {@legacy_response}
+      @legacy_adapter.rest_client.stub(:put) {@legacy_response}
+      @legacy_adapter.rest_client.stub(:delete) {@legacy_response}
+      
+      @store1  = Store.new(
+        :name => "DataMapperStore",
+        :phone => "1-800-DONT-CALL",
+        :latitude => 39.7392,
+        :longitude => 104.9842
+      )
+      @store2 = Store.new(
+        :name => "Legacy Store",
+        :phone => "1-800-222-3333",
+        :street => "4922 Seminary Road",
+        :city => "Denver",
+        :state => "CO",
+        :latitude => 39.7391,
+        :longitude => 104.9841
+      )
+      
+      @resources = [ @store1, @store2 ]
+      @resource = @store1
     end
 
     it "prepares a RestClient::Resource for the URI of the REST service" do
@@ -67,13 +105,18 @@ describe DataMapper::Adapters::RestAdapter do
     end
     
     it "prepares a RestClient::Resource for the URI of the REST service without format extensions if they are disabled" do
-      @third_adapter.format.extension.should be_nil
+      @legacy_adapter.format.extension.should be_nil
+    end
+    
+    it "should ask the format for the path to each Model" do
+      @legacy_format.should_receive(:resource_path).with(:model => 'Store__c')
+      @legacy_adapter.create([@store1])
     end
   end
 
   describe "#create" do
     describe "when provided a Resource" do
-      before(:each) do
+      before(:each) do        
         @resource  = Book.new(
           :created_at => DateTime.parse("2009-05-17T22:38:42-07:00"),
           :title => "DataMapper",
@@ -83,7 +126,7 @@ describe DataMapper::Adapters::RestAdapter do
       end
 
       it "should ask the format for the path to each Model" do
-        @format.should_receive(:resource_path).with(:model => @resource.model)
+        @format.should_receive(:resource_path).with(:model => "livre")
         stub_mocks!
         @adapter.create(@resources)
       end
@@ -433,7 +476,7 @@ describe DataMapper::Adapters::RestAdapter do
       end
 
       it "should provide the nested resource information to #resource_path" do
-        @format.should_receive(:resource_path).with({ :model => Publisher, :key => 1 }, { :model => DifficultBook })
+        @format.should_receive(:resource_path).with({ :model => Publisher, :key => 1 }, { :model => "booksies" })
         stub_mocks!
         @adapter.create(@resources)
       end

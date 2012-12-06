@@ -19,13 +19,13 @@ module DataMapperRest
       
       def parse_record(json, model)
         hash = JSON.parse(json)
-        field_to_property = Hash[ model.properties(repository_name).map { |p| [ p.field, p ] } ]
+        field_to_property = Hash[ model.properties(model.default_repository_name).map { |p| [ p.field, p ] } ]
         record_from_hash(hash, field_to_property)
       end
       
       def parse_collection(json, model)
         array = JSON.parse(json)
-        field_to_property = Hash[ model.properties(repository_name).map { |p| [ p.field, p ] } ]
+        field_to_property = Hash[ model.properties(model.default_repository_name).map { |p| [ p.field, p ] } ]
         array.collect do |hash|
           record_from_hash(hash, field_to_property)
         end
@@ -37,7 +37,7 @@ module DataMapperRest
         record = {}
         hash.each_pair do |field, value|
           next unless property = field_to_property[field]
-          record[field] = property.typecast(value)
+          record[property.name.to_s] = property.typecast(value)
         end
         
         record
