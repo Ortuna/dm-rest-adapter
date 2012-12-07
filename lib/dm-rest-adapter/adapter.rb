@@ -12,10 +12,17 @@ module DataMapperRest
         path_items = extract_parent_items_from_resource(resource)
         path_items << { :model => model.storage_name(model.default_repository_name) }
 
-        response = @rest_client[@format.resource_path(*path_items)].post(
+        path = @format.resource_path(*path_items)
+        
+        DataMapper.logger.debug("About to POST using #{path}")
+        
+        response = @rest_client[path].post(
           @format.string_representation(resource),
           :content_type => @format.mime, :accept => @format.mime
         ) do |response, request, result, &block|
+          
+          DataMapper.logger.debug("Response to POST was #{response.inspect}")
+          
           # See http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.2 for HTTP response 201
           if @options[:follow_on_create] && [201, 301, 302, 307].include?(response.code)
             response.args[:method] = :get
@@ -34,15 +41,24 @@ module DataMapperRest
       model = query.model
 
       path_items = extract_parent_items_from_query(query)
+      DataMapper.logger.debug("Reading #{path_items}")
       
       records = if id = extract_id_from_query(query)
         begin
           path_items << { :model => model, :key => id }
-          response = @rest_client[@format.resource_path(*path_items)].get(
+          path = @format.resource_path(*path_items)
+          
+          DataMapper.logger.debug("About to GET using #{path}")
+          
+          response = @rest_client[path].get(
             :accept => @format.mime
           )
+          
+          DataMapper.logger.debug("Response to GET was #{response.inspect}")
+          
           [ @format.parse_record(response.body, model) ]
         rescue RestClient::ResourceNotFound
+          DataMapper.logger.debug("Resource was not found")
           []
         end
       else
@@ -53,9 +69,14 @@ module DataMapperRest
         }
         query_options.delete(:params) if query_options[:params].empty?
         
-        response = @rest_client[@format.resource_path(*path_items)].get(
+        path = @format.resource_path(*path_items)
+        
+        DataMapper.logger.debug("About to GET using #{path} with query_options of #{query_options.inspect}")
+        
+        response = @rest_client[path].get(
           query_options
         )
+        DataMapper.logger.debug("Response to GET was #{response.inspect}")
         @format.parse_collection(response.body, model)
       end
 
@@ -104,23 +125,30 @@ module DataMapperRest
     def initialize(*)
       super
       
+      DataMapper.logger.debug("Initializing REST adapter with #{@options.inspect}")
+      
       raise ArgumentError, "Missing :format in @options" unless @options[:format]
 
       case @options[:format]
         when "xml"
+          DataMapper.logger.debug("Using XML format")
           @format = Format::Xml.new(@options.merge(:repository_name => name))
         when "json"
+          DataMapper.logger.debug("Using JSON format")
           @format = Format::Json.new(@options.merge(:repository_name => name))
         when String
           @format = load_format_from_string(@options[:format]).new(@options.merge(:repository_name => name))
+          DataMapper.logger.debug("Using loaded format #{@format.inspect}")
         else
+          DataMapper.logger.debug("Using format of #{@format.inspect}")
           @format = @options[:format]
       end
     
       if @options[:disable_format_extension_in_request_url]
+        DataMapper.logger.debug("Will not use format extension in requested URLs")
         @format.extension = nil
       end
-      
+      DataMapper.logger.debug("Initializing RestClient with #{normalized_uri}")
       @rest_client = RestClient::Resource.new(normalized_uri)
     end
     
