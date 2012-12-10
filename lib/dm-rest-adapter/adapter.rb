@@ -289,7 +289,7 @@ module DataMapperRest
     def extract_order_by_from_query(query)
       orders = []
       query.order.each do |order|
-        orders << { order.target.name.to_sym => order.operator }
+        orders << { order.target.field.to_sym => order.operator }
       end
       orders
     end

@@ -264,7 +264,7 @@ describe DataMapper::Adapters::RestAdapter do
 
     context "with query scoped by a non-key" do
       before(:each) do
-        @query = Book.all(:author => "Dan Kubb", :order => [:title.asc, :author.desc]).query
+        @query = Book.all(:author => "Dan Kubb", :order => [:title.asc, :author.desc, :comment.asc]).query
         @record  = {
           "id" => 1,
           "created_at" => DateTime.parse("2009-05-17T22:38:42-07:00"),
@@ -295,7 +295,9 @@ describe DataMapper::Adapters::RestAdapter do
 
       it "should use GET with the conditions appended as params" do
         @adapter.rest_client.should_receive(:get).with(
-          {:params => { :author => "Dan Kubb", :order => [{:title => :asc},{:author => :desc}] }, :accept=>"application/mock"}
+          {:params => { :author => "Dan Kubb", 
+                        :order => [{:title => :asc},{:author => :desc}, {:comment_crazy_mapping => :asc}] }, 
+                        :accept=>"application/mock"}
         ).and_return(@response)
         stub_mocks!
         @adapter.read(@query)
