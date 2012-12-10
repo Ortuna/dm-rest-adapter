@@ -9,7 +9,9 @@ describe DataMapper::Adapters::RestAdapter do
       :port     => 81,
       :user     => "admin",
       :password => "secret",
-      :format   => @format
+      :format   => @format,
+      :limit_param_name => 'unlimited',
+      :offset_param_name => 'nuffsaid'
     }])
     @adapter.rest_client = double("rest_client")
 
@@ -52,7 +54,9 @@ describe DataMapper::Adapters::RestAdapter do
         :password => "secret",
         :format   => "TestFormat",
         :extension => "test",
-        :disable_format_extension_in_request_url => false
+        :disable_format_extension_in_request_url => false,
+        :limit_param_name => 'unlimited',
+        :offset_param_name => 'nuffsaid'
       }])
       
       @legacy_adapter = DataMapper::Adapters::RestAdapter.new(:test, DataMapper::Mash[{
@@ -61,7 +65,9 @@ describe DataMapper::Adapters::RestAdapter do
         :user     => "admin",
         :password => "secret",
         :format   => @legacy_format,
-        :disable_format_extension_in_request_url => true
+        :disable_format_extension_in_request_url => true,
+        :limit_param_name => 'unlimited',
+        :offset_param_name => 'nuffsaid'
       }])
       @legacy_response.stub(:code) {200}
       @legacy_response.stub(:body) {""}
@@ -112,6 +118,7 @@ describe DataMapper::Adapters::RestAdapter do
       @legacy_format.should_receive(:resource_path).with(:model => 'Store__c')
       @legacy_adapter.create([@store1])
     end
+    
   end
 
   describe "#create" do
@@ -206,14 +213,20 @@ describe DataMapper::Adapters::RestAdapter do
 
     context "with query scoped by a key" do
       before(:each) do
-        @query = Book.all(:id => 1, :limit => 1).query
+        @query = Book.all(:id => 1, :limit => 1, :order => [:author.desc]).query
         @record  = {
           "id" => 1,
           "created_at" => DateTime.parse("2009-05-17T22:38:42-07:00"),
           "title" => "DataMapper",
           "author" => "Dan Kubb"
         }
-        @records = [ @record ]
+        @record2  = {
+          "id" => 2,
+          "created_at" => DateTime.parse("2009-05-17T22:38:44-07:00"),
+          "title" => "Humpty Dumpty",
+          "author" => "Shaniquah"
+        }
+        @records = [ @record, @record2 ]
       end
 
       it "should ask the format for the resource path using the key" do
@@ -239,7 +252,7 @@ describe DataMapper::Adapters::RestAdapter do
         @response.should_receive(:body) { "<<a resource>>" }
         @format.should_receive(:parse_record).with("<<a resource>>", Book).and_return(@record)
         stub_mocks!
-        @adapter.read(@query).should eql @records
+        @adapter.read(@query).should eql [@record]
       end
 
       it "gracefully returns an empty collection on 404" do
@@ -251,14 +264,20 @@ describe DataMapper::Adapters::RestAdapter do
 
     context "with query scoped by a non-key" do
       before(:each) do
-        @query = Book.all(:author => "Dan Kubb").query
+        @query = Book.all(:author => "Dan Kubb", :order => [:title.asc, :author.desc]).query
         @record  = {
           "id" => 1,
           "created_at" => DateTime.parse("2009-05-17T22:38:42-07:00"),
           "title" => "DataMapper",
           "author" => "Dan Kubb"
         }
-        @records = [ @record ]
+        @record2  = {
+          "id" => 2,
+          "created_at" => DateTime.parse("2009-05-17T22:38:41-07:00"),
+          "title" => "DataStuffer",
+          "author" => "Dan Kubb"
+        }
+        @records = [ @record, @record2 ]
       end
 
       it "should ask the format for the resource path" do
@@ -276,7 +295,7 @@ describe DataMapper::Adapters::RestAdapter do
 
       it "should use GET with the conditions appended as params" do
         @adapter.rest_client.should_receive(:get).with(
-          { :params => { :author => "Dan Kubb" }, :accept => "application/mock" }
+          {:params => { :author => "Dan Kubb", :order => [{:title => :asc},{:author => :desc}] }, :accept=>"application/mock"}
         ).and_return(@response)
         stub_mocks!
         @adapter.read(@query)
@@ -397,10 +416,10 @@ describe DataMapper::Adapters::RestAdapter do
     end
 
     describe "#read" do
-      it "should fetch the resource with the parent ID" do
+      it "should fetch the resource with the parent ID and an overridden limit and offset" do
         @format.should_receive(:resource_path).with({ :model => BookCover })
         @adapter.rest_client.should_receive(:get).with(
-          { :params => { :book_id => 1, :offset => 0, :limit => 1 }, :accept => "application/mock" }
+          { :params => {:book_id => 1, :order => [{:id=>:asc}], :unlimited => 1, :nuffsaid => 0 }, :accept => "application/mock" }
         ).and_return(@response)
         stub_mocks!
         DataMapper.repository(:test) { @book.cover } # no idea why this doesn't work!
@@ -437,7 +456,7 @@ describe DataMapper::Adapters::RestAdapter do
       it "should fetch the resource by passing the key as a query parameter" do
         @format.should_receive(:resource_path).with({ :model => Chapter })
         @adapter.rest_client.should_receive(:get).with(
-          { :params => { :book_id => 1 }, :accept => "application/mock" }
+          { :params => {:book_id => 1, :order=>[{:id => :asc}] }, :accept => "application/mock" }
         ).and_return(@response)
         stub_mocks!
         @adapter.read(@query)

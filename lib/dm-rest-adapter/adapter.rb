@@ -1,6 +1,5 @@
 module DataMapperRest
   # TODO: Specs for resource format parse errors (existing bug)
-  #       Map properties to field names for #create/#update instead of assuming they match (existing bug)
 
   class Adapter < DataMapper::Adapters::AbstractAdapter
     attr_accessor :rest_client, :format
@@ -50,15 +49,13 @@ module DataMapperRest
           
           DataMapper.logger.debug("About to GET using #{path}")
           
-          response = @rest_client[path].get(
-            :accept => @format.mime
-          )
+          response = @rest_client[path].get(:accept => @format.mime)
           
           DataMapper.logger.debug("Response to GET was #{response.inspect}")
           
           [ @format.parse_record(response.body, model) ]
         rescue RestClient::ResourceNotFound
-          DataMapper.logger.debug("Resource was not found")
+          DataMapper.logger.error("Resource was not found at #{path}. Response was #{response.inspect}")
           []
         end
       else
@@ -73,14 +70,14 @@ module DataMapperRest
         
         DataMapper.logger.debug("About to GET using #{path} with query_options of #{query_options.inspect}")
         
-        response = @rest_client[path].get(
-          query_options
-        )
+        response = @rest_client[path].get(query_options)
+        
         DataMapper.logger.debug("Response to GET was #{response.inspect}")
         @format.parse_collection(response.body, model)
       end
-
+      
       query.filter_records(records)
+      #records
     end
 
     def update(dirty_attributes, collection)
@@ -131,22 +128,38 @@ module DataMapperRest
 
       case @options[:format]
         when "xml"
-          DataMapper.logger.debug("Using XML format")
           @format = Format::Xml.new(@options.merge(:repository_name => name))
+          DataMapper.logger.debug("Using XML format")
         when "json"
-          DataMapper.logger.debug("Using JSON format")
           @format = Format::Json.new(@options.merge(:repository_name => name))
+          DataMapper.logger.debug("Using JSON format")
         when String
           @format = load_format_from_string(@options[:format]).new(@options.merge(:repository_name => name))
           DataMapper.logger.debug("Using loaded format #{@format.inspect}")
         else
-          DataMapper.logger.debug("Using format of #{@format.inspect}")
           @format = @options[:format]
+          DataMapper.logger.debug("Using format of #{@format.inspect}")
       end
-    
+      
+      if @options[:limit_param_name]
+        @has_overridden_limit_param = !(@options[:limit_param_name].nil? or @options[:limit_param_name].empty?)
+        DataMapper.logger.warn(":limit_param_name was given without specifying an actual parameter name!") unless @has_overridden_limit_param
+         
+        @limit_param_name = @options[:limit_param_name].to_sym
+        DataMapper.logger.debug("Will use #{@limit_param_name} for a limit parameter")
+      end
+      
+      if @options[:offset_param_name]
+        @has_overridden_offset_param = !(@options[:offset_param_name].nil? or @options[:offset_param_name].empty?) 
+        DataMapper.logger.warn(":offset_param_name was given without specifying an actual parameter name!") unless @has_overridden_offset_param
+        
+        @offset_param_name = @options[:offset_param_name].to_sym
+        DataMapper.logger.debug("Will use #{@offset_param_name} for an offset parameter")
+      end
+      
       if @options[:disable_format_extension_in_request_url]
-        DataMapper.logger.debug("Will not use format extension in requested URLs")
         @format.extension = nil
+        DataMapper.logger.debug("Will not use format extension in requested URLs")
       end
       DataMapper.logger.debug("Initializing RestClient with #{normalized_uri}")
       @rest_client = RestClient::Resource.new(normalized_uri)
@@ -238,12 +251,26 @@ module DataMapperRest
     def extract_params_from_query(query)
       model = query.model
       conditions = query.conditions
+      params = {}
 
-      return {} unless conditions.kind_of?(DataMapper::Query::Conditions::AndOperation)
-      return {} if conditions.any? { |o| o.subject.respond_to?(:key?) && o.subject.key? }
+      return params unless conditions.kind_of?(DataMapper::Query::Conditions::AndOperation)
+      return params if conditions.any? { |o| o.subject.respond_to?(:key?) && o.subject.key? }
       
-      query.options.reject { |k, v| [:fields, :conditions].include?(k) } \
-        .merge(extract_params_from_conditions(conditions))
+      params = query.options.reject { |k, v| [:fields, :conditions].include?(k) }.merge(extract_params_from_conditions(conditions))
+      
+      params[:order] = extract_order_by_from_query(query) unless query.order.empty?
+      
+      if @has_overridden_limit_param and limit = params[:limit]
+        params.delete(:limit)
+        params[@limit_param_name] = limit
+      end
+      
+      if @has_overridden_offset_param and offset = params[:offset]
+        params.delete(:offset)
+        params[@offset_param_name] = offset
+      end
+      
+      params
     end
     
     def extract_params_from_conditions(conditions)
@@ -257,6 +284,14 @@ module DataMapperRest
       end
       
       params.compact.reduce({}) { |memo, v| memo.merge(v) }
+    end
+    
+    def extract_order_by_from_query(query)
+      orders = []
+      query.order.each do |order|
+        orders << { order.target.name.to_sym => order.operator }
+      end
+      orders
     end
   end
 end
