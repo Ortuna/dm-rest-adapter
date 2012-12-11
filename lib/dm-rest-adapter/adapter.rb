@@ -256,33 +256,36 @@ module DataMapperRest
       return params unless conditions.kind_of?(DataMapper::Query::Conditions::AndOperation)
       return params if conditions.any? { |o| o.subject.respond_to?(:key?) && o.subject.key? }
       
-      params = query.options.reject { |k, v| [:fields, :conditions].include?(k) }.merge(extract_params_from_conditions(conditions))
+      condition_params = extract_params_from_conditions(query)
       
+      params.merge!(condition_params) if condition_params
+      #puts "\n---- AFTER merge are #{params.inspect}"
       params[:order] = extract_order_by_from_query(query) unless query.order.empty?
       
-      if @has_overridden_limit_param and limit = params[:limit]
-        params.delete(:limit)
-        params[@limit_param_name] = limit
+      options = query.options
+   
+      if @has_overridden_limit_param and not options[:limit].nil?
+        params[@limit_param_name] = options[:limit]
       end
-      
-      if @has_overridden_offset_param and offset = params[:offset]
-        params.delete(:offset)
-        params[@offset_param_name] = offset
+
+      if @has_overridden_offset_param and not options[:offset].nil?
+        params[@offset_param_name] = options[:offset]
       end
       
       params
     end
     
-    def extract_params_from_conditions(conditions)
-      params = conditions.collect do |operand|
-        if operand.kind_of?(DataMapper::Query::Conditions::EqualToComparison)
-          if operand.relationship? && !operand.subject.inverse.options[:nested]
-            mapping = operand.foreign_key_mapping
-            { mapping.subject.field.to_sym => mapping.value }
-          end
+    def extract_params_from_conditions(query)
+      params = []
+      
+      query.conditions.select{|c| c.kind_of?(DataMapper::Query::Conditions::EqualToComparison)}.each do |condition|
+        if condition.relationship? && !condition.subject.inverse.options[:nested]
+          params << { condition.foreign_key_mapping.subject.field.to_sym => condition.foreign_key_mapping.value }
+        else
+          params << { condition.subject.field.to_sym => condition.loaded_value }
         end
       end
-      
+
       params.compact.reduce({}) { |memo, v| memo.merge(v) }
     end
     

@@ -264,18 +264,21 @@ describe DataMapper::Adapters::RestAdapter do
 
     context "with query scoped by a non-key" do
       before(:each) do
-        @query = Book.all(:author => "Dan Kubb", :order => [:title.asc, :author.desc, :comment.asc]).query
+        @query = Book.all(:author => "Dan Kubb", :comment => "garbage", :order => [:title.asc, :author.desc, :comment.asc]).query
+        @query2 = Book.all(:author => "Dan Kubb").query
         @record  = {
           "id" => 1,
           "created_at" => DateTime.parse("2009-05-17T22:38:42-07:00"),
           "title" => "DataMapper",
-          "author" => "Dan Kubb"
+          "author" => "Dan Kubb",
+          "comment" => "garbage"
         }
         @record2  = {
           "id" => 2,
           "created_at" => DateTime.parse("2009-05-17T22:38:41-07:00"),
           "title" => "DataStuffer",
-          "author" => "Dan Kubb"
+          "author" => "Dan Kubb",
+          "comment" => "garbage"
         }
         @records = [ @record, @record2 ]
       end
@@ -295,7 +298,8 @@ describe DataMapper::Adapters::RestAdapter do
 
       it "should use GET with the conditions appended as params" do
         @adapter.rest_client.should_receive(:get).with(
-          {:params => { :author => "Dan Kubb", 
+          {:params => { :author => "Dan Kubb",
+                        :comment_crazy_mapping => "garbage",
                         :order => [{:title => :asc},{:author => :desc}, {:comment_crazy_mapping => :asc}] }, 
                         :accept=>"application/mock"}
         ).and_return(@response)
@@ -307,7 +311,7 @@ describe DataMapper::Adapters::RestAdapter do
         @response.should_receive(:body) { "<<a collection>>" }
         @format.should_receive(:parse_collection).with("<<a collection>>", Book).and_return(@records)
         stub_mocks!
-        @adapter.read(@query).should eql @records
+        @adapter.read(@query2).should eql @records
       end
     end
   end
@@ -418,7 +422,7 @@ describe DataMapper::Adapters::RestAdapter do
     end
 
     describe "#read" do
-      it "should fetch the resource with the parent ID and an overridden limit and offset" do
+      it "should fetch the resource with the parent ID and an overridden limit and offset with order by clauses" do
         @format.should_receive(:resource_path).with({ :model => BookCover })
         @adapter.rest_client.should_receive(:get).with(
           { :params => {:book_id => 1, :order => [{:id=>:asc}], :unlimited => 1, :nuffsaid => 0 }, :accept => "application/mock" }
