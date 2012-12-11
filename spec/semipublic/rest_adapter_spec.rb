@@ -300,8 +300,10 @@ describe DataMapper::Adapters::RestAdapter do
         @adapter.rest_client.should_receive(:get).with(
           {:params => { :author => "Dan Kubb",
                         :comment_crazy_mapping => "garbage",
-                        :order => [{:title => :asc},{:author => :desc}, {:comment_crazy_mapping => :asc}] }, 
-                        :accept=>"application/mock"}
+                        :order => [{:title => :asc},{:author => :desc}, {:comment_crazy_mapping => :asc}] 
+                      }, 
+           :accept => "application/mock"
+          }
         ).and_return(@response)
         stub_mocks!
         @adapter.read(@query)
