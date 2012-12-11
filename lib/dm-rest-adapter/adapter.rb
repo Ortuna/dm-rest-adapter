@@ -60,11 +60,9 @@ module DataMapperRest
         end
       else
         path_items << { :model => model }
-        query_options = {
-          :params => extract_params_from_query(query),
-          :accept => @format.mime
-        }
-        query_options.delete(:params) if query_options[:params].empty?
+        query_options = { :accept => @format.mime }
+        params = extract_params_from_query(query)
+        query_options[:params] = params unless params.empty?
         
         path = @format.resource_path(*path_items)
         
@@ -259,7 +257,7 @@ module DataMapperRest
       condition_params = extract_params_from_conditions(query)
       
       params.merge!(condition_params) if condition_params
-      #puts "\n---- AFTER merge are #{params.inspect}"
+      
       params[:order] = extract_order_by_from_query(query) unless query.order.empty?
       
       options = query.options
