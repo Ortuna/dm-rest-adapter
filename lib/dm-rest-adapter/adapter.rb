@@ -42,7 +42,9 @@ module DataMapperRest
       path_items = extract_parent_items_from_query(query)
       DataMapper.logger.debug("Reading #{path_items}")
       
-      records = if id = extract_id_from_query(query)
+      records = []
+      
+      if id = extract_id_from_query(query)
         begin
           path_items << { :model => model, :key => id }
           path = @format.resource_path(*path_items)
@@ -53,10 +55,10 @@ module DataMapperRest
           
           DataMapper.logger.debug("Response to GET was #{response.inspect}")
           
-          [ @format.parse_record(response.body, model) ]
+          records = [ @format.parse_record(response.body, model) ]
         rescue RestClient::ResourceNotFound
           DataMapper.logger.error("Resource was not found at #{path}. Response was #{response.inspect}")
-          []
+          records = []
         end
       else
         path_items << { :model => model }
@@ -71,7 +73,7 @@ module DataMapperRest
         response = @rest_client[path].get(query_options)
         
         DataMapper.logger.debug("Response to GET was #{response.inspect}")
-        @format.parse_collection(response.body, model)
+        records = @format.parse_collection(response.body, model)
       end
 
       records
