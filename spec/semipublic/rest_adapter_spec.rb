@@ -65,6 +65,7 @@ describe DataMapper::Adapters::RestAdapter do
         :user     => "admin",
         :password => "secret",
         :format   => @legacy_format,
+        :prefix   => "humpty/dumpty/",
         :disable_format_extension_in_request_url => true,
         :limit_param_name => 'unlimited',
         :offset_param_name => 'nuffsaid'

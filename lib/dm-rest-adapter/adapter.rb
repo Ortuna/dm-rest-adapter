@@ -183,7 +183,7 @@ module DataMapperRest
             :password     => @options[:password],
             :host         => @options[:host],
             :port         => @options[:port],
-            :path         => @options[:path],
+            :path         => @options[:path] || @options[:prefix],
             :fragment     => @options[:fragment]
           )
         end
