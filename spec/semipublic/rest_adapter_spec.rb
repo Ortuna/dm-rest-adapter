@@ -437,19 +437,32 @@ describe DataMapper::Adapters::RestAdapter do
 
   describe "many-to-one relationship" do
     before(:each) do
-      @book = DifficultBook.new(
-        :id => 1,
+      @resource  = DifficultBook.new(
+        :id => 5,
         :title => "DataMapper",
         :author => "Dann Kubb",
-        :publisher_id => 2
+        :publisher_id => 9
       )
+      @resource.persistence_state = DataMapper::Resource::PersistenceState::Persisted.new(@resource)
+      @publisher  = Publisher.new(
+        :id => 9,
+        :created_at => DateTime.parse("2009-05-17T22:38:42-07:00"),
+        :name => "Dan's Kubblishings"
+      )
+      @publisher.persistence_state = DataMapper::Resource::PersistenceState::Persisted.new(@publisher)
     end
 
     describe "#read" do
       it "should fetch the resource with the parent ID" do
-        @format.should_receive(:resource_path).with({ :model => Publisher, :key => 2 })
-        stub_mocks!
-        DataMapper.repository(:test) { @book.publisher }
+        @format.should_receive(:resource_path).with({ :model => Publisher, :key => 9 })
+        @format.stub(:parse_record) {@publisher}
+        @format.stub(:mime) {"application/mock"}
+        @adapter.rest_client.stub(:[]) { @adapter.rest_client }
+        @adapter.rest_client.stub(:get) { @response }
+        @response.stub(:get) { @response }
+        @response.stub(:code) {200}
+        @response.stub(:body) {""}
+        DataMapper.repository(:test) { @resource.publisher }
       end
     end
   end

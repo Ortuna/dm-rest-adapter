@@ -73,9 +73,8 @@ module DataMapperRest
         DataMapper.logger.debug("Response to GET was #{response.inspect}")
         @format.parse_collection(response.body, model)
       end
-      
-      query.filter_records(records)
-      #records
+
+      records
     end
 
     def update(dirty_attributes, collection)
