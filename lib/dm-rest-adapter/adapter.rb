@@ -162,6 +162,7 @@ module DataMapperRest
       end
       DataMapper.logger.debug("Initializing RestClient with #{normalized_uri}")
       @rest_client = RestClient::Resource.new(normalized_uri)
+      @rest_client = STDOUT if DataMapper.logger.level == 0
     end
     
     def load_format_from_string(class_name)
