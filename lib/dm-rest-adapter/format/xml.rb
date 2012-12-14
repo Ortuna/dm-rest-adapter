@@ -40,7 +40,7 @@ module DataMapperRest
         entity_element.elements.map do |element|
           field = element.name.to_s.tr('-', '_')
           next unless property = field_to_property[field]
-          record[property.name.to_s] = property.typecast(element.text)
+          record[field] = property.typecast(element.text)
         end
 
         record

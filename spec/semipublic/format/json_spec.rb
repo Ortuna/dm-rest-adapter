@@ -54,7 +54,7 @@ describe DataMapperRest::Format::Json do
     before(:each) do
       @format = DataMapperRest::Format::Json.new
       @time = DateTime.new
-      @json = '{"id":1,"created_at":"' + @time.to_s + '","title":"Testing","author":"Testy McTesty","comment_crazy_mapping":"No comment dude"}'
+      @json = '{"id":1,"created_at":"' + @time.to_s + '","title":"Testing","author":"Testy McTesty","comment":"No comment dude"}'
     end
     
     it "updates the attributes in the resource based on the response" do
@@ -65,7 +65,6 @@ describe DataMapperRest::Format::Json do
       book.created_at.should == @time
       book.title.should == "Testing"
       book.author.should == "Testy McTesty"
-      book.comment.should == "No comment dude"
     end
   end
   
@@ -82,7 +81,7 @@ describe DataMapperRest::Format::Json do
       record["created_at"].should == @time
       record["title"].should == "Testing"
       record["author"].should == "Testy McTesty"
-      record["comment"].should == "Donuts"
+      record["comment_crazy_mapping"].should == "Donuts"
     end
   end
   
@@ -101,12 +100,12 @@ describe DataMapperRest::Format::Json do
       collection[0]["created_at"].should == @time
       collection[0]["title"].should == "Testing"
       collection[0]["author"].should == "Testy McTesty"
-      collection[0]["comment"].should == "Itzy Bitzy Spider"
+      collection[0]["comment_crazy_mapping"].should == "Itzy Bitzy Spider"
       collection[1]["id"].should == 2
       collection[1]["created_at"].should == @time
       collection[1]["title"].should == "Testing 2"
       collection[1]["author"].should == "Besty McBesty"
-      collection[1]["comment"].should be_nil
+      collection[1]["comment_crazy_mapping"].should be_nil
     end
   end
 end

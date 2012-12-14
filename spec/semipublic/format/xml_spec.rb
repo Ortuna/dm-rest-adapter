@@ -116,12 +116,12 @@ describe DataMapperRest::Format::Xml do
       collection[0]["created_at"].should == @time
       collection[0]["title"].should == "Testing"
       collection[0]["author"].should == "Testy McTesty"
-      collection[0]["comment"].should == "This is a comment"
+      collection[0]["comment_crazy_mapping"].should == "This is a comment"
       collection[1]["id"].should == 2
       collection[1]["created_at"].should == @time
       collection[1]["title"].should == "Testing 2"
       collection[1]["author"].should == "Besty McBesty"
-      collection[1]["comment"].should == "This is a comment also"
+      collection[1]["comment_crazy_mapping"].should == "This is a comment also"
     end
   end
 end
