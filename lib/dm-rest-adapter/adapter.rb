@@ -252,7 +252,8 @@ module DataMapperRest
       model = query.model
       conditions = query.conditions
       params = {}
-
+      DataMapper.logger.debug("Conditions are #{conditions.inspect}")
+      
       return params unless conditions.kind_of?(DataMapper::Query::Conditions::AndOperation)
       return params if conditions.any? { |o| o.subject.respond_to?(:key?) && o.subject.key? }
       
