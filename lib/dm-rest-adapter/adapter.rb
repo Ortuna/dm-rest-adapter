@@ -263,13 +263,14 @@ module DataMapperRest
       params[:order] = extract_order_by_from_query(query) unless query.order.empty?
       
       options = query.options
-   
-      if @has_overridden_limit_param and not options[:limit].nil?
+      DataMapper.logger.debug("Options for limit and offset are #{@has_overridden_limit_param} for limit, and #{@has_overridden_offset_param} for offset")
+    
+      if @has_overridden_limit_param and options[:limit]
         DataMapper.logger.debug("Setting limit param using #{@limit_param_name.to_sym} and value #{options[:limit]}")
         params[@limit_param_name.to_sym] = options[:limit]
       end
 
-      if @has_overridden_offset_param and not options[:offset].nil?
+      if @has_overridden_offset_param and options[:offset]
         DataMapper.logger.debug("Setting offset param using #{@offset_param_name.to_sym} and value #{options[:offset]}")
         params[@offset_param_name.to_sym] = options[:offset]
       end
