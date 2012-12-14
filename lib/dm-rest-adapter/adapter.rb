@@ -265,11 +265,11 @@ module DataMapperRest
       options = query.options
    
       if @has_overridden_limit_param and not options[:limit].nil?
-        params[@limit_param_name] = options[:limit]
+        params[@limit_param_name.to_sym] = options[:limit]
       end
 
       if @has_overridden_offset_param and not options[:offset].nil?
-        params[@offset_param_name] = options[:offset]
+        params[@offset_param_name.to_sym] = options[:offset]
       end
       
       params
