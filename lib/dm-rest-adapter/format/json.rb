@@ -37,7 +37,7 @@ module DataMapperRest
         record = {}
         hash.each_pair do |field, value|
           next unless property = field_to_property[field]
-          record[property.name.to_s] = property.typecast(value)
+          record[field] = property.typecast(value)
         end
         
         record
