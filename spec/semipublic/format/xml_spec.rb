@@ -96,14 +96,14 @@ describe DataMapperRest::Format::Xml do
             <created_at type="datetime">#{@time.to_s}</created_at>
             <title>Testing</title>
             <author>Testy McTesty</author>
-            <comment_crazy_mapping>This is a comment</comment_crazy_mapping>
+            <comment>This is a comment</comment>
           </livre>
           <livre>
             <id type="integer">2</id>
             <created_at type="datetime">#{@time.to_s}</created_at>
             <title>Testing 2</title>
             <author>Besty McBesty</author>
-            <comment_crazy_mapping>This is a comment also</comment_crazy_mapping>
+            <comment>This is a comment also</comment>
           </livre>
         </livres>
       XML
@@ -116,12 +116,10 @@ describe DataMapperRest::Format::Xml do
       collection[0]["created_at"].should == @time
       collection[0]["title"].should == "Testing"
       collection[0]["author"].should == "Testy McTesty"
-      collection[0]["comment_crazy_mapping"].should == "This is a comment"
       collection[1]["id"].should == 2
       collection[1]["created_at"].should == @time
       collection[1]["title"].should == "Testing 2"
       collection[1]["author"].should == "Besty McBesty"
-      collection[1]["comment_crazy_mapping"].should == "This is a comment also"
     end
   end
 end

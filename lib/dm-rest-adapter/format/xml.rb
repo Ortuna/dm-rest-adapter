@@ -11,7 +11,7 @@ module DataMapperRest
       
       def parse_collection(xml, model)
         doc = REXML::Document::new(xml)
-        
+
         field_to_property = Hash[ model.properties(repository_name).map { |p| [ p.field, p ] } ]
         element_name = element_name(model)
         doc.elements.collect("/#{DataMapper::Inflector.pluralize(resource_name(model))}/#{element_name}") do |entity_element|
