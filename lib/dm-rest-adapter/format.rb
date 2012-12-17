@@ -29,13 +29,13 @@ module DataMapperRest
             key   = fragment[:key]
             memo << "#{resource_name(model)}/"
             memo << "#{key}/" if key
-            memo
           end
+          memo
         end.chomp("/")
         
-        path += ".#{extension}" if extension
+        path = "#{path}.#{extension}" if extension
         
-        path
+        path + params
       end
       
       def properties_to_serialize(resource)
