@@ -65,7 +65,7 @@ module DataMapperRest
         query_options = { :accept => @format.mime }
         params = extract_params_from_query(query)
         query_options[:params] = params unless params.empty?
-        path_items = append_params_to_path(query, path_items)
+        
         path = @format.resource_path(*path_items)
         
         DataMapper.logger.debug("About to GET using #{path} with query_options of #{query_options.inspect}")
@@ -247,9 +247,12 @@ module DataMapperRest
         :key => nested_relationship.target_key.get(nested_relationship_operand.value).first
       }.reject { |key, value| value.nil? }
     end
-
-    def append_params_to_path(query, path_items)
+    
+    def extract_params_from_query(query)
+      model = query.model
+      conditions = query.conditions
       params = {}
+      DataMapper.logger.debug("Conditions are #{conditions.inspect}")
       
       options = query.options
       DataMapper.logger.debug("Options for limit and offset are #{@has_overridden_limit_param} for limit, and #{@has_overridden_offset_param} for offset")
@@ -265,20 +268,6 @@ module DataMapperRest
       end
 
       params[:order] = extract_order_by_from_query(query) unless query.order.empty?
-      
-      unless params.empty?
-        path_items << "?"
-        path_items << params.map{|param_name, param_value| "#{param_name}=#{param_value}"}.join('&')
-      end
-      
-      path_items
-    end
-    
-    def extract_params_from_query(query)
-      model = query.model
-      conditions = query.conditions
-      params = {}
-      DataMapper.logger.debug("Conditions are #{conditions.inspect}")
       
       return params unless conditions.kind_of?(DataMapper::Query::Conditions::AndOperation)
       return params if conditions.any? { |o| o.subject.respond_to?(:key?) && o.subject.key? }
@@ -305,11 +294,11 @@ module DataMapperRest
     end
     
     def extract_order_by_from_query(query)
-      orders = []
+      orders = {}
       query.order.each do |order|
-        orders << "\"#{order.target.field}=#{order.operator}\""
+        orders[order.target.field.to_sym] = order.operator.to_sym
       end
-      "[#{orders.join(',')}]"
+      orders
     end
   end
 end
