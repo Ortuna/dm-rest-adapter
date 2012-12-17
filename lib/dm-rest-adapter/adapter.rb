@@ -65,7 +65,7 @@ module DataMapperRest
         query_options = { :accept => @format.mime }
         params = extract_params_from_query(query)
         query_options[:params] = params unless params.empty?
-        
+        path_items = append_params_to_path(query, path_items)
         path = @format.resource_path(*path_items)
         
         DataMapper.logger.debug("About to GET using #{path} with query_options of #{query_options.inspect}")
@@ -248,6 +248,32 @@ module DataMapperRest
       }.reject { |key, value| value.nil? }
     end
 
+    def append_params_to_path(query, path_items)
+      params = {}
+      
+      options = query.options
+      DataMapper.logger.debug("Options for limit and offset are #{@has_overridden_limit_param} for limit, and #{@has_overridden_offset_param} for offset")
+      
+      if @has_overridden_limit_param and options[:limit]
+        DataMapper.logger.debug("Setting limit param using #{@limit_param_name.to_sym} and value #{options[:limit]}")
+        params[@limit_param_name.to_sym] = options[:limit]
+      end
+
+      if @has_overridden_offset_param and options[:offset]
+        DataMapper.logger.debug("Setting offset param using #{@offset_param_name.to_sym} and value #{options[:offset]}")
+        params[@offset_param_name.to_sym] = options[:offset]
+      end
+
+      params[:order] = extract_order_by_from_query(query) unless query.order.empty?
+      
+      unless params.empty?
+        path_items << "?"
+        path_items << params.map{|param_name, param_value| "#{param_name}=#{param_value}"}.join('&')
+      end
+      
+      path_items
+    end
+    
     def extract_params_from_query(query)
       model = query.model
       conditions = query.conditions
@@ -260,22 +286,7 @@ module DataMapperRest
       condition_params = extract_params_from_conditions(query)
       
       params.merge!(condition_params) if condition_params
-      
-      params[:order] = extract_order_by_from_query(query) unless query.order.empty?
-      
-      options = query.options
-      DataMapper.logger.debug("Options for limit and offset are #{@has_overridden_limit_param} for limit, and #{@has_overridden_offset_param} for offset")
-    
-      if @has_overridden_limit_param and options[:limit]
-        DataMapper.logger.debug("Setting limit param using #{@limit_param_name.to_sym} and value #{options[:limit]}")
-        params[@limit_param_name.to_sym] = options[:limit]
-      end
-
-      if @has_overridden_offset_param and options[:offset]
-        DataMapper.logger.debug("Setting offset param using #{@offset_param_name.to_sym} and value #{options[:offset]}")
-        params[@offset_param_name.to_sym] = options[:offset]
-      end
-      
+            
       params
     end
     
@@ -296,9 +307,9 @@ module DataMapperRest
     def extract_order_by_from_query(query)
       orders = []
       query.order.each do |order|
-        orders << { order.target.field.to_sym => order.operator }
+        orders << "\"#{order.target.field}=#{order.operator}\""
       end
-      orders
+      "[#{orders.join(',')}]"
     end
   end
 end

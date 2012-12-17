@@ -184,7 +184,7 @@ describe DataMapper::Adapters::RestAdapter do
       end
 
       it "should ask the format for the resource path" do
-        @format.should_receive(:resource_path).with(:model => Book)
+        @format.should_receive(:resource_path).with({:model => Book}, "?", 'order=["id=asc"]')
         stub_mocks!
         @adapter.read(@query)
       end
@@ -285,7 +285,7 @@ describe DataMapper::Adapters::RestAdapter do
       end
 
       it "should ask the format for the resource path" do
-        @format.should_receive(:resource_path).with(:model => Book)
+        @format.should_receive(:resource_path).with({:model => Book}, "?", 'order=["title=asc","author=desc","comment_crazy_mapping=asc"]')
         stub_mocks!
         @adapter.read(@query)
       end
@@ -300,8 +300,7 @@ describe DataMapper::Adapters::RestAdapter do
       it "should use GET with the conditions appended as params" do
         @adapter.rest_client.should_receive(:get).with(
           {:params => { :author => "Dan Kubb",
-                        :comment_crazy_mapping => "garbage",
-                        :order => [{:title => :asc},{:author => :desc}, {:comment_crazy_mapping => :asc}] 
+                        :comment_crazy_mapping => "garbage" 
                       }, 
            :accept => "application/mock"
           }
@@ -426,9 +425,9 @@ describe DataMapper::Adapters::RestAdapter do
 
     describe "#read" do
       it "should fetch the resource with the parent ID and an overridden limit and offset with order by clauses" do
-        @format.should_receive(:resource_path).with({ :model => BookCover })
+        @format.should_receive(:resource_path).with({ :model => BookCover }, "?", 'unlimited=1&nuffsaid=0&order=["id=asc"]')
         @adapter.rest_client.should_receive(:get).with(
-          { :params => {:book_id => 1, :order => [{:id=>:asc}], :unlimited => 1, :nuffsaid => 0 }, :accept => "application/mock" }
+          { :params => {:book_id => 1}, :accept => "application/mock" }
         ).and_return(@response)
         stub_mocks!
         DataMapper.repository(:test) { @book.cover } # no idea why this doesn't work!
@@ -476,9 +475,9 @@ describe DataMapper::Adapters::RestAdapter do
 
     describe "#read" do
       it "should fetch the resource by passing the key as a query parameter" do
-        @format.should_receive(:resource_path).with({ :model => Chapter })
+        @format.should_receive(:resource_path).with({ :model => Chapter }, '?', 'order=["id=asc"]')
         @adapter.rest_client.should_receive(:get).with(
-          { :params => {:book_id => 1, :order=>[{:id => :asc}] }, :accept => "application/mock" }
+          { :params => {:book_id => 1}, :accept => "application/mock" }
         ).and_return(@response)
         stub_mocks!
         @adapter.read(@query)
@@ -500,7 +499,7 @@ describe DataMapper::Adapters::RestAdapter do
       before(:each) { @query = @publisher.books.query }
       
       it "should provide the nested resource information to #resource_path" do
-        @format.should_receive(:resource_path).with({ :model => Publisher, :key => 1 }, { :model => DifficultBook })
+        @format.should_receive(:resource_path).with({ :model => Publisher, :key => 1 }, { :model => DifficultBook }, '?', 'order=["id=asc"]')
         stub_mocks!
         @adapter.read(@query)
       end
@@ -577,7 +576,9 @@ describe DataMapper::Adapters::RestAdapter do
       @format.should_receive(:resource_path).with(
         { :model => Publisher, :key => 2 },
         { :model => DifficultBook, :key => 1 },
-        { :model => Vendor }
+        { :model => Vendor },
+        '?', 
+        'order=["id=asc"]'
       )
       stub_mocks!
       @adapter.read(@query)

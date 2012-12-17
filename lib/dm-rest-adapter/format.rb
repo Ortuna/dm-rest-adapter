@@ -20,19 +20,22 @@ module DataMapperRest
       end
 
       def resource_path(*path_fragments)
+        params = ""
         path = path_fragments.reduce("") do |memo, fragment|
-          model = fragment[:model]
-          key   = fragment[:key]
-          memo << "#{resource_name(model)}/"
-          memo << "#{key}/" if key
-          memo
+          if fragment.is_a? String
+            params << fragment
+          else
+            model = fragment[:model]
+            key   = fragment[:key]
+            memo << "#{resource_name(model)}/"
+            memo << "#{key}/" if key
+            memo
+          end
         end.chomp("/")
         
-        if extension
-          path + ".#{extension}"
-        else
-          path
-        end
+        path += ".#{extension}" if extension
+        
+        path
       end
       
       def properties_to_serialize(resource)
