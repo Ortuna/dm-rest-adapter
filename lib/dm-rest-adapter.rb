@@ -14,5 +14,9 @@ require 'dm-rest-adapter/format/xml'
 require 'dm-rest-adapter/format/json'
 require 'dm-rest-adapter/exceptions'
 
+require 'restclient'
+require 'ntlm/http'
+require 'dm-rest-adapter/sharepoint'
+
 DataMapper::Adapters::RestAdapter = DataMapperRest::Adapter
 DataMapper::Associations::Relationship::OPTIONS << :nested

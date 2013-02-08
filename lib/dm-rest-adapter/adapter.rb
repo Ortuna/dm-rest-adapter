@@ -171,7 +171,7 @@ module DataMapperRest
       else
         class_name
       end
-      
+
       canonical.split("::").reduce(Kernel) { |klass, name| klass.const_get(name) }
     end
 

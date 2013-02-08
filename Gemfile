@@ -45,3 +45,5 @@ group :datamapper do
   end
 
 end
+
+gem 'ruby-ntlm'
